@@ -1,6 +1,7 @@
 from CLI import Parser, CManager
 import unittest
 import os
+from unittest import mock
 
 class TestParser(unittest.TestCase):
   def test_dquotes(self):
@@ -55,6 +56,15 @@ class TestAll(unittest.TestCase):
       p = Parser('pwd')
       res = self.cm.process_input(p.result)
       self.assertEqual(res.output, os.getcwd())
+
+  ls_files_mock = ["file1", "file2", "file3"]
+
+  @mock.patch("os.listdir", return_value=ls_files_mock)
+  def test_ls(self, listdir_mock):
+      p = Parser("ls")
+      res = self.cm.process_input(p.result)
+
+      self.assertEqual(res.output, '\n'.join(TestAll.ls_files_mock))
 
   def test_cat_subst(self):
       p = Parser('cat $FILE')

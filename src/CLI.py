@@ -244,13 +244,14 @@ class CManager:
 
 class Executor:
     #args number dictionary, -1 - takes all args in list
-    count_args = {'_echo' : -1,
-                  '_cat' : 1,
+    count_args = {'_echo': -1,
+                  '_cat': 1,
                   '_EQ': 2,
-                  '_VAR' : 1,
-                  '_pwd':0,
-                  '_wc' : 1,
-                  '_exit':0}
+                  '_VAR': 1,
+                  '_pwd': 0,
+                  '_ls': 0,
+                  '_wc': 1,
+                  '_exit': 0}
     def __init__(self):
         self.output = ""
 
@@ -315,6 +316,9 @@ class OneCommand(Executor):
         sys.exit()
     def _pwd(self, arg):
         self.output = os.getcwd()
+
+    def _ls(self, arg):
+        self.output = '\n'.join(os.listdir())
 
 class JustString(Executor):
     """String behavior"""
