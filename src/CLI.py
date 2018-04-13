@@ -249,7 +249,7 @@ class Executor:
                   '_EQ': 2,
                   '_VAR': 1,
                   '_pwd': 0,
-                  '_ls': 0,
+                  '_ls': -1,
                   '_cd': -1,
                   '_wc': 1,
                   '_exit': 0}
@@ -316,6 +316,18 @@ class OrdinaryEx(Executor):
         os.chdir(next_dir)
         self.output = ""
 
+    def _ls(self, arg):
+        """
+        List the files and directories in directory passed as first argument.
+
+        If no arguments, uses current directory as target directory.
+        """
+        target_dir = None
+        if len(arg) != 0:
+            target_dir = arg[0].output
+
+        self.output = '\n'.join(os.listdir(target_dir))
+
 
 class Environment(Executor):
     def __init__(self):
@@ -335,13 +347,6 @@ class OneCommand(Executor):
         sys.exit()
     def _pwd(self, arg):
         self.output = os.getcwd()
-
-    def _ls(self, _):
-        """
-        List the files and directories in current directory
-        separated by newlines.
-        """
-        self.output = '\n'.join(os.listdir())
 
 
 class JustString(Executor):

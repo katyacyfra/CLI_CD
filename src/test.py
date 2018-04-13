@@ -57,13 +57,21 @@ class TestAll(unittest.TestCase):
       res = self.cm.process_input(p.result)
       self.assertEqual(res.output, os.getcwd())
 
-  ls_files_mock = ["file1", "file2", "file3"]
+  ls_files_mock = ['file1', 'file2', 'file3']
 
-  @mock.patch("os.listdir", return_value=ls_files_mock)
-  def test_ls(self, listdir_mock: mock.Mock):
-      p = Parser("ls")
+  @mock.patch('os.listdir', return_value=ls_files_mock)
+  def test_ls_without_argument(self, _):
+      p = Parser('ls')
       res = self.cm.process_input(p.result)
 
+      self.assertEqual(res.output, '\n'.join(TestAll.ls_files_mock))
+
+  @mock.patch('os.listdir', return_value=ls_files_mock)
+  def test_ls_with_argument(self, listdir_mock: mock.Mock):
+      p = Parser('ls target')
+      res = self.cm.process_input(p.result)
+
+      listdir_mock.assert_called_once_with('target')
       self.assertEqual(res.output, '\n'.join(TestAll.ls_files_mock))
 
   @mock.patch("os.chdir")
