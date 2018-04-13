@@ -320,6 +320,7 @@ class Environment(Executor):
         except:
             raise KeyError
 
+
 class OneCommand(Executor):
     def __init__(self):
         self.output = ""
@@ -329,8 +330,13 @@ class OneCommand(Executor):
     def _pwd(self, arg):
         self.output = os.getcwd()
 
-    def _ls(self, arg):
+    def _ls(self, _):
+        """
+        List the files and directories in current directory
+        separated by newlines.
+        """
         self.output = '\n'.join(os.listdir())
+
 
 class JustString(Executor):
     """String behavior"""
