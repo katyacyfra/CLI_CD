@@ -58,7 +58,7 @@ class Parser:
                 tokens.append("EQ")
                 if res != "":
                     tokens.append(res)
-                var = self.parse_assign()
+                var = self.parse_assign(res)
                 tokens.append(var)
                 res = ""
 
