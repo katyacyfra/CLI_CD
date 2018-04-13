@@ -250,7 +250,7 @@ class Executor:
                   '_VAR': 1,
                   '_pwd': 0,
                   '_ls': 0,
-                  '_cd': 1,
+                  '_cd': -1,
                   '_wc': 1,
                   '_exit': 0}
     def __init__(self):
@@ -304,10 +304,16 @@ class OrdinaryEx(Executor):
         """
         Changes the directory of shell to the passed relative directory.
 
-        :param arg: expected to have one argument which is target directory.
+        If no arguments passed, changes dir to root.
+
+        :param arg: command-line arguments
         """
-        dir = arg[0].output
-        os.chdir(dir)
+        if len(arg) != 0:
+            next_dir = arg[0].output
+        else:
+            next_dir = os.path.abspath(os.sep)
+
+        os.chdir(next_dir)
         self.output = ""
 
 

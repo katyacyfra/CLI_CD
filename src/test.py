@@ -67,11 +67,18 @@ class TestAll(unittest.TestCase):
       self.assertEqual(res.output, '\n'.join(TestAll.ls_files_mock))
 
   @mock.patch("os.chdir")
-  def test_cd(self, chdir_mock: mock.Mock):
+  def test_cd_with_argument(self, chdir_mock: mock.Mock):
       p = Parser("cd directory")
       self.cm.process_input(p.result)
 
       chdir_mock.assert_called_once_with("directory")
+
+  @mock.patch("os.chdir")
+  def test_cd_without_arg(self, chdir_mock: mock.Mock):
+      p = Parser("cd")
+      self.cm.process_input(p.result)
+
+      chdir_mock.assert_called_once_with(os.path.abspath(os.sep))
 
   def test_cat_subst(self):
       p = Parser('cat $FILE')
