@@ -58,7 +58,7 @@ class Parser:
                 tokens.append("EQ")
                 if res != "":
                     tokens.append(res)
-                var = self.parse_assign()
+                var = self.parse_assign(res)
                 tokens.append(var)
                 res = ""
 
@@ -244,13 +244,15 @@ class CManager:
 
 class Executor:
     #args number dictionary, -1 - takes all args in list
-    count_args = {'_echo' : -1,
-                  '_cat' : 1,
+    count_args = {'_echo': -1,
+                  '_cat': 1,
                   '_EQ': 2,
-                  '_VAR' : 1,
-                  '_pwd':0,
-                  '_wc' : 1,
-                  '_exit':0}
+                  '_VAR': 1,
+                  '_pwd': 0,
+                  '_ls': -1,
+                  '_cd': -1,
+                  '_wc': 1,
+                  '_exit': 0}
     def __init__(self):
         self.output = ""
 
@@ -298,6 +300,35 @@ class OrdinaryEx(Executor):
     def _EQ(self,arg):
         CManager.env_variables[arg[0].output] = arg[1].output
 
+    def _cd(self, arg):
+        """
+        Changes the directory of shell to the passed relative directory.
+
+        If no arguments passed, changes dir to root.
+
+        :param arg: command-line arguments
+        """
+        if len(arg) != 0:
+            next_dir = arg[0].output
+        else:
+            next_dir = os.path.abspath(os.sep)
+
+        os.chdir(next_dir)
+        self.output = ""
+
+    def _ls(self, arg):
+        """
+        List the files and directories in directory passed as first argument.
+
+        If no arguments, uses current directory as target directory.
+        """
+        target_dir = None
+        if len(arg) != 0:
+            target_dir = arg[0].output
+
+        self.output = '\n'.join(os.listdir(target_dir))
+
+
 class Environment(Executor):
     def __init__(self):
         pass
@@ -307,6 +338,7 @@ class Environment(Executor):
         except:
             raise KeyError
 
+
 class OneCommand(Executor):
     def __init__(self):
         self.output = ""
@@ -315,6 +347,7 @@ class OneCommand(Executor):
         sys.exit()
     def _pwd(self, arg):
         self.output = os.getcwd()
+
 
 class JustString(Executor):
     """String behavior"""

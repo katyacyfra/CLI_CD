@@ -1,6 +1,7 @@
 from CLI import Parser, CManager
 import unittest
 import os
+from unittest import mock
 
 class TestParser(unittest.TestCase):
   def test_dquotes(self):
@@ -55,6 +56,37 @@ class TestAll(unittest.TestCase):
       p = Parser('pwd')
       res = self.cm.process_input(p.result)
       self.assertEqual(res.output, os.getcwd())
+
+  ls_files_mock = ['file1', 'file2', 'file3']
+
+  @mock.patch('os.listdir', return_value=ls_files_mock)
+  def test_ls_without_argument(self, _):
+      p = Parser('ls')
+      res = self.cm.process_input(p.result)
+
+      self.assertEqual(res.output, '\n'.join(TestAll.ls_files_mock))
+
+  @mock.patch('os.listdir', return_value=ls_files_mock)
+  def test_ls_with_argument(self, listdir_mock: mock.Mock):
+      p = Parser('ls target')
+      res = self.cm.process_input(p.result)
+
+      listdir_mock.assert_called_once_with('target')
+      self.assertEqual(res.output, '\n'.join(TestAll.ls_files_mock))
+
+  @mock.patch("os.chdir")
+  def test_cd_with_argument(self, chdir_mock: mock.Mock):
+      p = Parser("cd directory")
+      self.cm.process_input(p.result)
+
+      chdir_mock.assert_called_once_with("directory")
+
+  @mock.patch("os.chdir")
+  def test_cd_without_arg(self, chdir_mock: mock.Mock):
+      p = Parser("cd")
+      self.cm.process_input(p.result)
+
+      chdir_mock.assert_called_once_with(os.path.abspath(os.sep))
 
   def test_cat_subst(self):
       p = Parser('cat $FILE')
