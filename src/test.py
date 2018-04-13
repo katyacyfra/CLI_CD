@@ -60,11 +60,18 @@ class TestAll(unittest.TestCase):
   ls_files_mock = ["file1", "file2", "file3"]
 
   @mock.patch("os.listdir", return_value=ls_files_mock)
-  def test_ls(self, listdir_mock):
+  def test_ls(self, listdir_mock: mock.Mock):
       p = Parser("ls")
       res = self.cm.process_input(p.result)
 
       self.assertEqual(res.output, '\n'.join(TestAll.ls_files_mock))
+
+  @mock.patch("os.chdir")
+  def test_cd(self, chdir_mock: mock.Mock):
+      p = Parser("cd directory")
+      self.cm.process_input(p.result)
+
+      chdir_mock.assert_called_once_with("directory")
 
   def test_cat_subst(self):
       p = Parser('cat $FILE')

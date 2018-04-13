@@ -250,6 +250,7 @@ class Executor:
                   '_VAR': 1,
                   '_pwd': 0,
                   '_ls': 0,
+                  '_cd': 1,
                   '_wc': 1,
                   '_exit': 0}
     def __init__(self):
@@ -298,6 +299,17 @@ class OrdinaryEx(Executor):
             self.output = "%d %d %d" % (lw[0], lw[1], size)
     def _EQ(self,arg):
         CManager.env_variables[arg[0].output] = arg[1].output
+
+    def _cd(self, arg):
+        """
+        Changes the directory of shell to the passed relative directory.
+
+        :param arg: expected to have one argument which is target directory.
+        """
+        dir = arg[0].output
+        os.chdir(dir)
+        self.output = ""
+
 
 class Environment(Executor):
     def __init__(self):
