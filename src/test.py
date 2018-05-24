@@ -1,109 +1,135 @@
-from CLI import Parser, CManager
 import unittest
 import os
-
-class TestParser(unittest.TestCase):
-  def test_dquotes(self):
-      p = Parser('echo "Hello, world"')
-      self.assertEqual(p.result, [['echo', ['Hello, world']]])
-
-  def test_squotes(self):
-      p = Parser("echo   'Hello '")
-      self.assertEqual(p.result, [['echo', ['Hello ']]])
-
-  def test_assign(self):
-      p = Parser("FILE=example.txt")
-      self.assertEqual(p.result, [["EQ","FILE", "example.txt"]])
-
-  def test_subst(self):
-      p = Parser("cat $FILE")
-      self.assertEqual(p.result, [['cat', ['VAR', 'FILE']]])
-
-  def test_subst_string(self):
-      p = Parser('echo "  $HELLO, world"')
-      self.assertEqual(p.result, [['echo', ['  ', ['VAR', 'HELLO'], ', world']]])
-
-  def test_subst_string_no_var(self):
-      p = Parser('echo " __ $R, world"')
-      self.assertEqual(p.result, [['echo', [' __ ', ['VAR', 'R'], ', world']]])
-
-  def test_pipe(self):
-      p = Parser('cat x.txt | wc| cat example.txt|wc  ')
-      self.assertEqual(p.result, [['cat', 'x.txt'], ['wc'], ['cat', 'example.txt'], ['wc']])
-
-  def test_assign_q(self):
-      p = Parser("FILE='example.txt'")
-      self.assertEqual(p.result, [['EQ', 'FILE', ['example.txt']]])
+import CLI
+from config import cm
+from ast_parser import ASTParser
 
 
 class TestAll(unittest.TestCase):
-  def setUp(self):
-      self.cm = CManager()
+    def setUp(self):
+        self.cm = cm
 
-  def test_echo(self):
-      p = Parser('echo "Hello, world!"')
-      res = self.cm.process_input(p.result)
-      self.assertEqual(res.output, "Hello, world!")
+    def test_echo(self):
+        p = ASTParser('echo "Hello, world!"')
+        res = self.cm.process_input(p.tree)
+        self.assertEqual("Hello, world!", res)
 
-  def test_assignment(self):
-      p = Parser('FILE=example.txt')
-      res = self.cm.process_input(p.result)
-      self.assertEqual(self.cm.env_variables['FILE'], "example.txt" )# added to environment variables
-      self.assertEqual(res.output, '')
+    def test_assignment(self):
+        p = ASTParser('FILE=example.txt')
+        res = self.cm.process_input(p.tree)
+        self.assertEqual(self.cm.env_variables['FILE'], "example.txt")  # added to environment variables
+        self.assertEqual(res, '')
 
-  def test_pwd(self):
-      p = Parser('pwd')
-      res = self.cm.process_input(p.result)
-      self.assertEqual(res.output, os.getcwd())
+    def test_pwd(self):
+        p = ASTParser('pwd')
+        res = self.cm.process_input(p.tree)
+        self.assertEqual(res, os.getcwd())
 
-  def test_cat_subst(self):
-      p = Parser('cat $FILE')
-      res = self.cm.process_input(p.result)
-      self.assertEqual(res.output, 'text test\n ')
+    def test_cat_subst(self):
+        p = ASTParser('FILE=example.txt')
+        res = self.cm.process_input(p.tree)
+        p = ASTParser('cat $FILE')
+        res = self.cm.process_input(p.tree)
+        self.assertEqual(res, 'text test\n ')
 
-  def test_cat_no_file(self):
-      p = Parser('cat no_such_file.txt|cat')
-      res = self.cm.process_input(p.result)
-      self.assertEqual(res.output, '')
 
-  def test_wc(self):
-      p = Parser('wc example.txt')
-      res = self.cm.process_input(p.result)
-      self.assertEqual(res.output, '1 2 9')
+    def test_wc(self):
+        p = ASTParser('wc example.txt')
+        res = self.cm.process_input(p.tree)
+        self.assertEqual(res, '1 2 9')
 
-  def test_wc_file(self):
-      p = Parser('cat example.txt | wc')
-      res = self.cm.process_input(p.result)
-      self.assertEqual(res.output, '1 2 9')
+    def test_wc_file(self):
+        p = ASTParser('cat example.txt | wc')
+        res = self.cm.process_input(p.tree)
+        self.assertEqual(res, '1 2 9')
 
-  def test_wc_input(self):
-      p = Parser('echo 123 | wc')
-      res = self.cm.process_input(p.result)
-      self.assertEqual(res.output, '1 1 3')
+    def test_wc_input(self):
+        p = ASTParser('echo 123 | wc')
+        res = self.cm.process_input(p.tree)
+        self.assertEqual(res, '1 1 3')
 
-  def test_big_pipe(self):
-      p = Parser('echo "Hello"| cat|cat')
-      res = self.cm.process_input(p.result)
-      self.assertEqual(res.output, "Hello")
+    def test_big_pipe(self):
+        p = ASTParser('echo "Hello"| cat|cat')
+        res = self.cm.process_input(p.tree)
+        self.assertEqual(res, "Hello")
 
-  def test_var_command(self):
-      p = Parser('x=pwd')
-      res = self.cm.process_input(p.result)
-      p = Parser('$x')
-      res = self.cm.process_input(p.result)
-      self.assertEqual(res.output, os.getcwd())
+    def test_var_command(self):
+        p = ASTParser('x=pwd')
+        res = self.cm.process_input(p.tree)
+        p = ASTParser('$x')
+        res = self.cm.process_input(p.tree)
+        self.assertEqual(os.getcwd(), res)
 
-  def test_var_command_arg(self):
-      p = Parser('y=echo')
-      res = self.cm.process_input(p.result)
-      p = Parser('$y 123')
-      res = self.cm.process_input(p.result)
-      self.assertEqual(res.output, '123')
+    def test_var_command_arg(self):
+        p = ASTParser('y=echo')
+        res = self.cm.process_input(p.tree)
+        p = ASTParser('$y 123')
+        res = self.cm.process_input(p.tree)
+        self.assertEqual('123', res)
 
-  def test_calling_shell(self):
-      p = Parser('ping -W 2 -c 1 192.168.1.70')
-      res = self.cm.process_input(p.result)
-      print(res.output)
+    def test_calling_shell(self):
+        p = ASTParser('ping -W 2 -c 1 192.168.1.70')
+        res = self.cm.process_input(p.tree)
+        print(res)
+
+    def test_echo_quotes(self):
+        p = ASTParser('x=1')
+        res = self.cm.process_input(p.tree)
+        p = ASTParser('echo "$x"')
+        res = self.cm.process_input(p.tree)
+        self.assertEquals('1', res)
+
+    def test_echo_quotes_again(self):
+        p = ASTParser('x=1')
+        res = self.cm.process_input(p.tree)
+        p = ASTParser('echo "1$x"')
+        res = self.cm.process_input(p.tree)
+        self.assertEquals('11', res)
+
+
+class TestASTParser(unittest.TestCase):
+    def test_ast_simple(self):
+        p = ASTParser('echo 1 2')
+        self.assertEqual('1', p.tree.root.children[0].children[0].value)
+        self.assertEqual('2', p.tree.root.children[0].children[1].value)
+
+    def test_ast_single_quotes(self):
+        p = ASTParser("echo 'test just test'")
+        self.assertEqual('test just test', p.tree.root.children[0].children[0].value)
+
+    def test_ast_var(self):
+        p = ASTParser("echo $x")
+        self.assertEqual('VAR', p.tree.root.children[0].children[0].command)
+        self.assertEqual('x', p.tree.root.children[0].children[0].children[0].value)
+
+    def test_ast_assign(self):
+        p = ASTParser("x=6")
+        self.assertEqual('EQ', p.tree.root.children[0].command)
+        self.assertEqual('x', p.tree.root.children[0].children[0].value)
+        self.assertEqual('6', p.tree.root.children[0].children[1].value)
+
+        p = ASTParser("x='file.txt'")
+        self.assertEqual('file.txt', p.tree.root.children[0].children[1].value)
+
+    def test_ast_double_quotes(self):
+        p = ASTParser('echo "x"')
+        self.assertEqual('x', p.tree.root.children[0].children[0].children[0].value)
+
+        p = ASTParser('echo "$x"')
+        self.assertEqual('VAR', p.tree.root.children[0].children[0].children[0].command)
+        self.assertEqual('x', p.tree.root.children[0].children[0].children[0].children[0].value)
+
+        p = ASTParser('echo "1$x"')
+        self.assertEqual(2, len(p.tree.root.children[0].children[0].children))
+        self.assertEqual('1', p.tree.root.children[0].children[0].children[0].value)
+        self.assertEqual('VAR', p.tree.root.children[0].children[0].children[1].command)
+        self.assertEqual('x', p.tree.root.children[0].children[0].children[1].children[0].value)
+
+    def test_ast_pipe(self):
+        p = ASTParser('cat x.txt|wc|cat example.txt|wc  ')
+        self.assertEqual('wc', p.tree.root.children[0].command)
+        self.assertEqual('example.txt', p.tree.root.children[0].children[0].children[0].value)
+
 
 if __name__ == '__main__':
     unittest.main()
