@@ -2,6 +2,7 @@ import sys
 import os
 import subprocess
 from config import cm, command_list
+import re
 
 
 class Executor:
@@ -18,7 +19,8 @@ class Executor:
                            '_VAR': 1,
                            '_pwd': 0,
                            '_wc': 1,
-                           '_exit': 0}
+                           '_exit': 0,
+                           '_grep': 2}
 
     def run(self):
         if self.command in self.count_args.keys():
@@ -49,7 +51,7 @@ class Executor:
         try:  # read file
             with open(arg[0]) as f:
                 for line in f:
-                    self.output += line + '\n '
+                    self.output += line + '\n'
         except:  # read stdin
             self.output = arg[0]
 
@@ -87,7 +89,7 @@ class Executor:
             raise KeyError
 
 
-class ProcessEx:
+class ProcessEx(Executor):
     """Input to shell"""
 
     def __init__(self, input):
@@ -97,4 +99,49 @@ class ProcessEx:
             self.output = self.output.decode('utf-8')
         except UnicodeDecodeError:
             pass
+
+
+class GrepEx(Executor):
+    """ Grep execution"""
+
+    def __init__(self, args):
+        self.args = args
+        self.output = ""
+
+    def run(self):
+        lines_after = self.args['A']
+        whole_word = self.args['w']
+        ignore_case = self.args['i']
+        pattern = self.args['pattern']
+        if 'file' in self.args:
+            file = self.args['file']
+
+        re_flags = 0
+        if ignore_case:
+            re_flags |= re.IGNORECASE
+        if whole_word:
+            pattern = '\\b{}\\b'.format(pattern)
+
+        compiled_pattern = re.compile(pattern, re_flags)
+
+        if 'contents' in self.args:  # from stdin
+            lines = self.args['contents'].splitlines()
+        else:
+            f = open(file, 'r')
+            lines = f.read().splitlines()
+            f.close()
+        for i, line in enumerate(lines):
+            if re.search(compiled_pattern, line):
+                for ln in lines[i:i + 1 + lines_after]:
+                    if lines_after > 0:
+                        self.output += ln + '\n'
+                    else:
+                        self.output += ln
+                if lines_after == 0:
+                    self.output += '\n'
+        self.output = self.output[:-1]
+        return self.output
+
+
+
 

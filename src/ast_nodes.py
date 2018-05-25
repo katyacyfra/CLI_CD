@@ -59,3 +59,19 @@ class CommandNode(Node):
         for i in self.children:
             args.append(i.execute())
         return Executor(self.command, args).run()
+
+
+class GrepNode(CommandNode):
+    def __init__(self, nm, read_from_stdin):
+        self.command = 'grep'
+        self.children = []
+        self.namespace = vars(nm)
+        self.read_from_stdin = read_from_stdin
+
+    def execute(self):
+        arg = ""
+        if self.read_from_stdin:
+            for c in self.children:
+                arg = c.execute()
+            self.namespace['contents'] = arg
+        return GrepEx(self.namespace).run()
