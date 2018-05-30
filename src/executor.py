@@ -91,14 +91,16 @@ class Executor:
 
 class ProcessEx(Executor):
     """Input to shell"""
-
     def __init__(self, input):
-        out = subprocess.Popen(input, stdout=subprocess.PIPE)
-        self.output = out.communicate()[0]
         try:
+            out = subprocess.Popen(input, stdout=subprocess.PIPE)
+            self.output = out.communicate()[0]
             self.output = self.output.decode('utf-8')
         except UnicodeDecodeError:
             pass
+        except Exception as e:
+            print(str(e))
+            self.output = ''
 
 
 class GrepEx(Executor):

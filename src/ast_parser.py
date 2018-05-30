@@ -28,7 +28,11 @@ class ASTParser:
                         current_node.children.append(new_node)
                     else:
                         if res == 'grep':
-                            new_node = self.parse_grep(current_node)
+                            try:
+                                new_node = self.parse_grep(current_node)
+                            except:
+                                self.tree.root = ResultNode('')
+                                break
                         else:
                             new_node = CommandNode(res)
                         current_node.children.append(new_node)
@@ -194,6 +198,7 @@ class ASTParser:
         res = res.replace(' ', '')
         if res != '':
             args.append(res)
+
         if read_from_stdin == False:
             parser.add_argument('-i', action="store_true", default=False)
             parser.add_argument('-w', action="store_true", default=False)
@@ -205,6 +210,9 @@ class ASTParser:
             parser.add_argument('-w', action="store_true", default=False)
             parser.add_argument('-A', action="store", default=0, type=int)
             parser.add_argument("pattern", type=str, help="pattern")
-        namespace = parser.parse_args(args)
+        try:
+            namespace = parser.parse_args(args)
+        except:
+            raise
         node = GrepNode(namespace, read_from_stdin)
         return node
