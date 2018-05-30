@@ -1,4 +1,5 @@
-from ast_nodes import AST, StringQNode, ResultNode, StringDQNode, CommandNode
+from ast_nodes import AST, StringQNode, ResultNode, StringDQNode, CommandNode, GrepNode
+import argparse
 
 
 class ASTParser:
@@ -26,7 +27,14 @@ class ASTParser:
                         new_node = StringQNode(res)
                         current_node.children.append(new_node)
                     else:
-                        new_node = CommandNode(res)
+                        if res == 'grep':
+                            try:
+                                new_node = self.parse_grep(current_node)
+                            except:
+                                self.tree.root = ResultNode('')
+                                break
+                        else:
+                            new_node = CommandNode(res)
                         current_node.children.append(new_node)
                         current_node = new_node
                 res = ""
@@ -166,3 +174,45 @@ class ASTParser:
         if in_double != '':
             res.children.append(StringQNode(in_double))
         return res
+
+    def parse_grep(self, current):
+        parser = argparse.ArgumentParser()
+        args = []
+        res = ""
+        if len(self.tree.root.children) == 0:
+            read_from_stdin = False
+        else:
+            read_from_stdin = True
+
+        while self.index < self.end and self.s[self.index] != '|':
+            if self.s[self.index] == ' ':
+                self.index = self.index + 1
+                args.append(res)
+                res = ""
+            else:
+                res += self.s[self.index]
+                self.index = self.index + 1
+
+        if self.index < self.end and self.s[self.index] == '|':
+            self.index = self.index - 1
+        res = res.replace(' ', '')
+        if res != '':
+            args.append(res)
+
+        if read_from_stdin == False:
+            parser.add_argument('-i', action="store_true", default=False)
+            parser.add_argument('-w', action="store_true", default=False)
+            parser.add_argument('-A', action="store", default=0, type=int)
+            parser.add_argument("pattern", type=str, help="pattern")
+            parser.add_argument("file", type=str, help="file")
+        else:
+            parser.add_argument('-i', action="store_true", default=False)
+            parser.add_argument('-w', action="store_true", default=False)
+            parser.add_argument('-A', action="store", default=0, type=int)
+            parser.add_argument("pattern", type=str, help="pattern")
+        try:
+            namespace = parser.parse_args(args)
+        except:
+            raise
+        node = GrepNode(namespace, read_from_stdin)
+        return node

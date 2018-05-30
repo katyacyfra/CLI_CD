@@ -11,5 +11,5 @@ class CommandManager:
 
 cm = CommandManager()
 
-command_list = ['echo', 'cat', 'pwd', 'wc', 'exit', 'VAR', 'EQ']
+command_list = ['echo', 'cat', 'pwd', 'wc', 'exit', 'VAR', 'EQ', 'grep']
 
